@@ -4,6 +4,7 @@ let bestScore = 0;
 
 const scoreNode = document.getElementById("score");
 const bestScoreNode = document.getElementById("best-score");
+const restartBtn = document.getElementById("restart");
 
 document.addEventListener("DOMContentLoaded", () => {
     bestScore = localStorage.getItem("bestScore");
@@ -13,8 +14,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+restartBtn.addEventListener("click", restart)
 
-biteStatus = 0
+
+let biteStatus = 0
 
 class Field {
     constructor() {
@@ -25,33 +28,31 @@ class Field {
         this.size = 19; // размер поля в клетках
     }
 
-    draw() {
-
-    }
+    draw() {}
 }
 
 class Snake {
     constructor(canvas, box, fieldSize) {
-        this.position = [
-            {x: 9, y:9},
-            {x: 9, y:10}
-        ];
         this.canvas = canvas;
         this.box = box;
         this.fieldSize = fieldSize;
         this.foodPosition = {};
+
+        this.position = [
+            {x: 9, y:9},
+            {x: 9, y:10}
+        ];
     }
 
-    delIf(snakePosition) {
+    _delIf(snakePosition) {
         if (biteStatus !== 1) {
             snakePosition.pop()
         } else {
-           
             biteStatus = 0
         }
     }
 
-    snakeMove() {
+    _snakeMove() {
         let snakeHead = this.position[0];
         this.canvas.clearRect(0, 0, canvas.width, canvas.height);
         if (dir === "left") {
@@ -59,33 +60,34 @@ class Snake {
                 x: (snakeHead["x"] - 1 + this.fieldSize) % this.fieldSize,
                 y: snakeHead["y"]
             });
-            this.delIf(this.position);
+            this._delIf(this.position);
         } else if (dir === "up") {
             this.position.unshift({
                 x: snakeHead["x"],
                 y: (snakeHead["y"] - 1 + this.fieldSize) % this.fieldSize
             });
-            this.delIf(this.position);
+            this._delIf(this.position);
         } else if (dir === "right") {
             this.position.unshift({
                 x: (snakeHead["x"] + 1) % this.fieldSize,
                 y: snakeHead["y"]
             });
-            this.delIf(this.position);
+            this._delIf(this.position);
         } else if (dir === "down") {
             this.position.unshift({
                 x: snakeHead["x"],
                 y: (snakeHead["y"] + 1) % this.fieldSize
             });
-            this.delIf(this.position);
+            this._delIf(this.position);
         }
     }
 
-    biteTail() {
+    _biteSelf() {
         let snakeHead = this.position[0];
         for (let i = 1; i < this.position.length; i++) {
             if (JSON.stringify(this.position[i]) === JSON.stringify(snakeHead)) {
                 clearInterval(gameLoop);
+                restartBtn.classList.add("visible")
                 if (score > bestScore) {
                     bestScore = score;
                     bestScoreNode.textContent = bestScore;
@@ -96,8 +98,8 @@ class Snake {
     }
 
     draw() {
-        this.snakeMove();
-        this.biteTail();
+        this._snakeMove();
+        this._biteSelf();
         this.canvas.fillStyle = "#5d9700";
         let snakeBox = this.box - 2; //уменьшить размер на 1 с каждой стороны, для красивой рамки
         this.position.forEach( ( el ) => {
@@ -117,30 +119,28 @@ class Food {
         this.snakePosition = snakePosition;
     }
 
-    randomPosition() {
+    _randomPosition() {
         if (biteStatus == true) {
             this.position = {
                 x: Math.floor(Math.random() * this.fieldSize),
                 y: Math.floor(Math.random() * this.fieldSize),
             }
-            this.verifyPosition()
+            this._verifyPosition()
         }
     }
 
-    verifyPosition() {
+    _verifyPosition() {
         this.snakePosition.forEach( (el) => {
             if (JSON.stringify(this.position) === JSON.stringify(el)) {
-                this.randomPosition()
+                this._randomPosition()
             }
-            else {
-                return
-            }
+            else { return }
         })
         return true
     }
 
     
-    isBite() {
+    _isBite() {
         let snakeHead = this.snakePosition[0];
         if (JSON.stringify(this.position) === JSON.stringify(snakeHead)) {
             score++
@@ -151,11 +151,11 @@ class Food {
     }
 
     draw() {
-        this.isBite();
-        this.randomPosition();
+        this._isBite();
+        this._randomPosition();
         this.canvas.fillStyle = "#d2374a";
         let foodBox = this.box - 2;
-        if (this.verifyPosition() === true) {
+        if (this._verifyPosition() === true) {
             let x = this.position["x"] * this.box + 1; // +1, чтобы 
             let y = this.position["y"] * this.box + 1;
             this.canvas.fillRect(x, y, foodBox, foodBox);
@@ -191,7 +191,6 @@ class Game {
     }
 
     draw() {
-        field.draw();
         snake.draw();
         food.draw();
     }
@@ -200,4 +199,8 @@ class Game {
 let game = new Game();
 
 let gameLoop = setInterval(game.draw, 200);
+
+function restart() {
+    location.reload()
+}
 
