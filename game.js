@@ -1,7 +1,6 @@
 let score = 0;
 let bestScore = 0;
 
-
 const scoreNode = document.getElementById("score");
 const bestScoreNode = document.getElementById("best-score");
 const restartBtn = document.getElementById("restart");
@@ -13,11 +12,35 @@ document.addEventListener("DOMContentLoaded", () => {
         bestScoreNode.textContent = bestScore;
     }
 });
+restartBtn.addEventListener("click", restart);
 
-restartBtn.addEventListener("click", restart)
+let biteStatus = 0;
 
+let dir; // направление движения змейки
+let count = 0; // счётчик смены направления змейки (чтобы змейка не могла менять направление дважды за одну смену кадра)
 
-let biteStatus = 0
+document.addEventListener("keydown", direction);
+
+function direction(event) {
+	if (count === 0) { // если змейка не меняла направление
+        if(event.keyCode == 37 && dir != "right") {
+            dir = "left";
+            count = 1; 
+        }
+        else if(event.keyCode == 38 && dir != "down") {
+            dir = "up";
+            count = 1; 
+        }
+        else if(event.keyCode == 39 && dir != "left") {
+            dir = "right";
+            count = 1; 
+        }
+        else if(event.keyCode == 40 && dir != "up") {
+            dir = "down";
+            count = 1; 
+        }
+    }
+}
 
 class Field {
     constructor() {
@@ -39,8 +62,8 @@ class Snake {
         this.foodPosition = {};
 
         this.position = [
-            {x: 9, y:9},
-            {x: 9, y:10}
+            {x: Math.floor(this.fieldSize / 2), y: Math.floor(this.fieldSize / 2)},
+            {x: Math.floor(this.fieldSize / 2), y: Math.floor(this.fieldSize / 2) + 1}
         ];
     }
 
@@ -80,13 +103,14 @@ class Snake {
             });
             this._delIf(this.position);
         }
+        count = 0;
     }
 
     _biteSelf() {
         let snakeHead = this.position[0];
         for (let i = 1; i < this.position.length; i++) {
             if (JSON.stringify(this.position[i]) === JSON.stringify(snakeHead)) {
-                clearInterval(gameLoop);
+                endGame = true;
                 restartBtn.classList.add("visible")
                 if (score > bestScore) {
                     bestScore = score;
@@ -94,16 +118,17 @@ class Snake {
                     localStorage.setItem("bestScore", JSON.stringify(bestScore));
                 }
             }
-          }
+        }
     }
 
     draw() {
         this._snakeMove();
         this._biteSelf();
+        
         this.canvas.fillStyle = "#5d9700";
         let snakeBox = this.box - 2; //уменьшить размер на 1 с каждой стороны, для красивой рамки
         this.position.forEach( ( el ) => {
-            let x = el["x"] * this.box + 1; // +1, чтобы 
+            let x = el["x"] * this.box + 1; // +1 для рамки
             let y = el["y"] * this.box + 1;
             this.canvas.fillRect(x, y, snakeBox, snakeBox);
         })
@@ -139,11 +164,11 @@ class Food {
         return true
     }
 
-    
     _isBite() {
         let snakeHead = this.snakePosition[0];
         if (JSON.stringify(this.position) === JSON.stringify(snakeHead)) {
             score++
+            if (interval > 100) { interval -= 10 }
             scoreNode.textContent = score;
             this.canvas.clearRect(this.position["x"], this.position["y"], this.fieldSize, this.fieldSize);
             biteStatus = 1;
@@ -163,25 +188,6 @@ class Food {
     }
 }
 
-document.addEventListener("keydown", direction);
-
-let dir;
-
-function direction(event) {
-	if(event.keyCode == 37 && dir != "right") {
-		dir = "left";
-	}
-	else if(event.keyCode == 38 && dir != "down") {
-		dir = "up";
-	}
-    else if(event.keyCode == 39 && dir != "left") {
-		dir = "right";
-    }
-	else if(event.keyCode == 40 && dir != "up") {
-		dir = "down";
-    }
-}
-
 let field = new Field();
 let snake = new Snake(field.context, field.box, field.size);
 let food = new Food(field.context, field.box, field.size, snake.position);
@@ -193,12 +199,14 @@ class Game {
     draw() {
         snake.draw();
         food.draw();
+        if (endGame !== true) { gameLoop = setTimeout(game.draw, interval) }
     }
 }
 
 let game = new Game();
-
-let gameLoop = setInterval(game.draw, 200);
+let endGame = false;
+let interval = 500;
+let gameLoop = setTimeout(game.draw, interval);
 
 function restart() {
     location.reload()
