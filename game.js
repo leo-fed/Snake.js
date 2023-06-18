@@ -168,7 +168,7 @@ class Food {
         let snakeHead = this.snakePosition[0];
         if (JSON.stringify(this.position) === JSON.stringify(snakeHead)) {
             score++
-            if (interval > 100) { interval -= 10 }
+            if (interval > 150) { interval -= 10 }
             scoreNode.textContent = score;
             this.canvas.clearRect(this.position["x"], this.position["y"], this.fieldSize, this.fieldSize);
             biteStatus = 1;
