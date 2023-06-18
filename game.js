@@ -1,5 +1,5 @@
 let score = 0;
-let bestScore = 0;
+let bestScore;
 
 const scoreNode = document.getElementById("score");
 const bestScoreNode = document.getElementById("best-score");
@@ -10,9 +10,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bestScore) { 
         bestScore = JSON.parse(bestScore);
         bestScoreNode.textContent = bestScore;
+    } else {
+        bestScore = 0;
     }
 });
 restartBtn.addEventListener("click", restart);
+
+function restart() {
+    location.reload()
+}
 
 let biteStatus = 0;
 
@@ -59,12 +65,12 @@ class Snake {
         this.canvas = canvas;
         this.box = box;
         this.fieldSize = fieldSize;
-        this.foodPosition = {};
 
         this.position = [
             {x: Math.floor(this.fieldSize / 2), y: Math.floor(this.fieldSize / 2)},
             {x: Math.floor(this.fieldSize / 2), y: Math.floor(this.fieldSize / 2) + 1}
         ];
+        this.color = "#5d9700";
     }
 
     _delIf(snakePosition) {
@@ -125,7 +131,7 @@ class Snake {
         this._snakeMove();
         this._biteSelf();
         
-        this.canvas.fillStyle = "#5d9700";
+        this.canvas.fillStyle = this.color;
         let snakeBox = this.box - 2; //уменьшить размер на 1 с каждой стороны, для красивой рамки
         this.position.forEach( ( el ) => {
             let x = el["x"] * this.box + 1; // +1 для рамки
@@ -142,6 +148,8 @@ class Food {
         this.box = box;
         this.fieldSize = fieldSize;
         this.snakePosition = snakePosition;
+
+        this.color = "#d2374a";
     }
 
     _randomPosition() {
@@ -178,10 +186,10 @@ class Food {
     draw() {
         this._isBite();
         this._randomPosition();
-        this.canvas.fillStyle = "#d2374a";
+        this.canvas.fillStyle = this.color;
         let foodBox = this.box - 2;
         if (this._verifyPosition() === true) {
-            let x = this.position["x"] * this.box + 1; // +1, чтобы 
+            let x = this.position["x"] * this.box + 1;
             let y = this.position["y"] * this.box + 1;
             this.canvas.fillRect(x, y, foodBox, foodBox);
         }
@@ -199,16 +207,14 @@ class Game {
     draw() {
         snake.draw();
         food.draw();
-        if (endGame !== true) { gameLoop = setTimeout(game.draw, interval) }
+        if (endGame !== true) { 
+            gameLoop = setTimeout(game.draw, interval) 
+        }
     }
 }
 
 let game = new Game();
 let endGame = false;
-let interval = 500;
+
+let interval = 500; // начальный интервал отрисовки
 let gameLoop = setTimeout(game.draw, interval);
-
-function restart() {
-    location.reload()
-}
-
